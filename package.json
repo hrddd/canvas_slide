@@ -1,0 +1,21 @@
+{
+  "name": "canvas_slide",
+  "version": "0.0.0",
+  "description": "canvasを使用したスライド",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "canvas",
+    "html5"
+  ],
+  "author": "ddd",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-coffee": "^2.3.1",
+    "gulp-compass": "^2.1.0",
+    "gulp-util": "^3.0.6"
+  }
+}
