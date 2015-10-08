@@ -2,10 +2,13 @@ var gulp = require('gulp');
 var compass = require('gulp-compass');
 var coffee = require('gulp-coffee');
 var gutil = require('gulp-util');
+var plumber = require('gulp-plumber');
  
 // compass
 gulp.task('compass', function() {
-    gulp.src('./resource/scss/**/*.scss').pipe(compass({
+    gulp.src('./resource/scss/**/*.scss')
+    .pipe(plumber())
+    .pipe(compass({
         config_file: './config.rb',
         comments: false,
         css: './public/css/',
@@ -14,7 +17,8 @@ gulp.task('compass', function() {
 });
 
 gulp.task('coffee', function() {
-  gulp.src('./resource/coffee/**/*.coffee')
+    gulp.src('./resource/coffee/**/*.coffee')
+    .pipe(plumber())
     .pipe(coffee({bare: true}).on('error', gutil.log))
     .pipe(gulp.dest('./public/js/'))
 });
