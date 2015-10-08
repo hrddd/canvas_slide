@@ -18,6 +18,19 @@ body {
     }
 }
 
+canvas {
+    width: 100%;
+}
 span {
     background: rgba(0,0,0,0.1);
+}
+
+#slide-image {
+    position: relative;
+}
+#image-container {
+    position: absolute;
+}
+#effect-container {
+    position: absolute;
 }

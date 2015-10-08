@@ -8,9 +8,33 @@ window.requestAnimFrame = do ->
             window.setTimeout callback, 1000 / 60
 
 $ ->
-    # property
-    canvas = document.querySelector('#slide-container');
-    ctx = canvas.getContext('2d');
+    # main(img)
+    canvas = document.querySelector('#image-container')
+    ctx = canvas.getContext('2d')
+
+    # buffer(effect)
+    canvas_buf = document.querySelector('#effect-container')
+    ctx_buf = canvas_buf.getContext('2d')
+
+    #preload
+    imagesArray = [
+        '1.png'
+    ]
+    imageDirectory = '../img/'
+    imageObjects = []
+
+    setLoadImages = (imagesArray) ->
+        loadComp = 0
+        for imageName, index in imagesArray
+            imageObjects.push(new Image())
+            imageObjects[index].src = imageDirectory + imageName;
+            imageObjects[index].onload = () ->
+                loadComp++
+                if loadComp is imagesArray.length
+                    console.log('comp!')
+                    ctx.drawImage(imageObjects[0],0,0)
+
+    setLoadImages(imagesArray)
 
     # particle
     class Particle
@@ -29,16 +53,27 @@ $ ->
         particles[i] = new Particle(6, '#D0A000', Math.random()*(4-2)+2)
         particles[i].position.x = Math.random()*canvas.width
         particles[i].position.y = Math.random()*canvas.height
-        particles[i].draw(ctx)
+        particles[i].draw(ctx_buf)
 
-    loopAnim = ->
+    loopAnim = () ->
         requestAnimFrame (loopAnim)
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx_buf.clearRect(0, 0, canvas.width, canvas.height)
         for particle in particles
             particle.position.y += particle.speed
-            particle.draw(ctx)
+            particle.draw(ctx_buf)
             if particle.position.y > canvas.height
                 particle.position.y = -30;
 
-    # 実行
-    loopAnim()
+    #windowHeightAdjust
+    adjust = ->
+        h = $(window).width()/2
+        $('#slide-image').css('height', h)
+    adjust()
+    $(window).on 'resize', () ->
+        adjust()
+
+    #slide
+    $('#start-button').on 'click', ->
+        loopAnim()
+        console.log('aaa')
+    #loopAnim()

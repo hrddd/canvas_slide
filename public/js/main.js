@@ -5,9 +5,33 @@ window.requestAnimFrame = (function() {
 })();
 
 $(function() {
-  var Particle, canvas, ctx, density, i, j, loopAnim, particles, ref;
-  canvas = document.querySelector('#slide-container');
+  var Particle, adjust, canvas, canvas_buf, ctx, ctx_buf, density, i, imageDirectory, imageObjects, imagesArray, j, loopAnim, particles, ref, setLoadImages;
+  canvas = document.querySelector('#image-container');
   ctx = canvas.getContext('2d');
+  canvas_buf = document.querySelector('#effect-container');
+  ctx_buf = canvas_buf.getContext('2d');
+  imagesArray = ['1.png'];
+  imageDirectory = '../img/';
+  imageObjects = [];
+  setLoadImages = function(imagesArray) {
+    var imageName, index, j, len, loadComp, results;
+    loadComp = 0;
+    results = [];
+    for (index = j = 0, len = imagesArray.length; j < len; index = ++j) {
+      imageName = imagesArray[index];
+      imageObjects.push(new Image());
+      imageObjects[index].src = imageDirectory + imageName;
+      results.push(imageObjects[index].onload = function() {
+        loadComp++;
+        if (loadComp === imagesArray.length) {
+          console.log('comp!');
+          return ctx.drawImage(imageObjects[0], 0, 0);
+        }
+      });
+    }
+    return results;
+  };
+  setLoadImages(imagesArray);
   Particle = (function() {
     function Particle(scale, color, speed, position) {
       this.scale = scale;
@@ -35,17 +59,17 @@ $(function() {
     particles[i] = new Particle(6, '#D0A000', Math.random() * (4 - 2) + 2);
     particles[i].position.x = Math.random() * canvas.width;
     particles[i].position.y = Math.random() * canvas.height;
-    particles[i].draw(ctx);
+    particles[i].draw(ctx_buf);
   }
   loopAnim = function() {
     var k, len, particle, results;
     requestAnimFrame(loopAnim);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx_buf.clearRect(0, 0, canvas.width, canvas.height);
     results = [];
     for (k = 0, len = particles.length; k < len; k++) {
       particle = particles[k];
       particle.position.y += particle.speed;
-      particle.draw(ctx);
+      particle.draw(ctx_buf);
       if (particle.position.y > canvas.height) {
         results.push(particle.position.y = -30);
       } else {
@@ -54,5 +78,17 @@ $(function() {
     }
     return results;
   };
-  return loopAnim();
+  adjust = function() {
+    var h;
+    h = $(window).width() / 2;
+    return $('#slide-image').css('height', h);
+  };
+  adjust();
+  $(window).on('resize', function() {
+    return adjust();
+  });
+  return $('#start-button').on('click', function() {
+    loopAnim();
+    return console.log('aaa');
+  });
 });
