@@ -3,7 +3,7 @@ var http        = require("http"),
     path        = require("path");
 
 var server  = http.createServer(function(req, res){
-  fs.readFile(getFileName(req.url), "utf-8", function(err, data){
+  fs.readFile(getFileName(req.url), getEncodeType(req.Url), function(err, data){
     if(err){
       res.writeHead(500);
       return res.end("Error loading " + req.url);
@@ -20,8 +20,23 @@ function getContentType(reqUrl){
             return "text/css";
         case ".js":
             return "text/javascript";
-        default:
+        case ".html":
             return "text/html";
+        case ".jpg":
+            return "image/jpeg";
+    }
+}
+
+function getEncodeType(reqUrl){
+    var extname = path.extname(reqUrl);
+    switch(extname){
+        case ".css":
+        case ".js":
+        case ".html":
+            return "utf-8";
+        case ".jpg":
+        case ".png":
+            return "binary";
     }
 }
 
