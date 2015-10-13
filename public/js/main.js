@@ -147,7 +147,7 @@ $(function() {
     var canvasDevPt, devideChange, slashStroke;
     requestAnimFrame(loopAnim);
     if (startPoint && endPoint) {
-      if (((startPoint.x - endPoint.x) < -100 || (startPoint.x - endPoint.x) > 100) || ((startPoint.y - endPoint.y) < -100 || (startPoint.y - endPoint.y) > 100)) {
+      if ((Math.abs(startPoint.x - endPoint.x) > 72) || (Math.abs(startPoint.y - endPoint.y) > 72)) {
         canvasDevPt = getCanvasDividePoint(startPoint, endPoint, 720, 720, ctx_buf2);
         slashStroke = getSlashStroke(startPoint, endPoint);
         devideChange = Math.floor(Math.random() * 2) + 1;
@@ -165,8 +165,13 @@ $(function() {
         }
         ctx_buf2.clip();
         ctx_buf.clip();
-        slashImage(canvasDevPt, slashStroke, ctx_buf, canvas);
-        slashImage(canvasDevPt, -1 * slashStroke, ctx_buf2, canvas);
+        if (devideChange === 1) {
+          slashImage(canvasDevPt, slashStroke, ctx_buf, canvas);
+          slashImage(canvasDevPt, -1 * slashStroke, ctx_buf2, canvas);
+        } else if (devideChange === 2) {
+          slashImage(canvasDevPt, -1 * slashStroke, ctx_buf, canvas);
+          slashImage(canvasDevPt, slashStroke, ctx_buf2, canvas);
+        }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(canvas_buf, 0, 0);
         ctx.drawImage(canvas_buf2, 0, 0);
@@ -186,13 +191,10 @@ $(function() {
     var h, w;
     w = $(window).width();
     h = $(window).height();
-    $('article').css({
+    return $('article').css({
       'height': h,
       'width': w
     });
-    ctx_buf2.restore();
-    ctx.restore();
-    return console.log("restore");
   };
   adjust();
   return $(window).on('resize', function() {

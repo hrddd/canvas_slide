@@ -148,6 +148,7 @@ $ ->
         ctx.lineTo(p4.x, p4.y)
         ctx.closePath()
 
+    # ずらす
     slashImage = (devidePoint,scale,ctx,image) ->
         # 傾きから角度を求め、ずらしの距離が一定になるようにする
         if((devidePoint[1].x - devidePoint[0].x) is 0)
@@ -163,6 +164,8 @@ $ ->
 
         ctx.drawImage(image, x, y)
 
+    # 2点間の距離を取る
+    # ストロークの大きさをずらしの大きさ(scale)に適用
     getSlashStroke = (startPoint,endPoint) ->
         distanceX = (endPoint.x - startPoint.x)
         distanceY = (endPoint.y - startPoint.y)
@@ -205,17 +208,13 @@ $ ->
     loopAnim = () ->
         requestAnimFrame (loopAnim)
         if startPoint and endPoint
-            if ((startPoint.x - endPoint.x)<-100 or (startPoint.x - endPoint.x)>100) or ((startPoint.y - endPoint.y)<-100 or (startPoint.y - endPoint.y)>100)
+            if (Math.abs(startPoint.x - endPoint.x)>72) or (Math.abs(startPoint.y - endPoint.y)>72)
                 canvasDevPt = getCanvasDividePoint(startPoint, endPoint, 720, 720, ctx_buf2)
                 
                 slashStroke = getSlashStroke(startPoint, endPoint)
-                # 傾きを割り出す
-                # if((canvasDevPt[1].x - canvasDevPt[0].x) is 0)
-                #     devideSlope = null
-                # else
-                #     devideSlope = (canvasDevPt[1].y - canvasDevPt[0].y)/(canvasDevPt[1].x - canvasDevPt[0].x)
 
                 devideChange = Math.floor(Math.random() * 2) + 1
+
                 # サブパスの状態を初回時で固定する
                 ctx_buf2.restore()
                 ctx_buf2.save()
@@ -240,8 +239,13 @@ $ ->
                 ctx_buf.clip()
                 # ctx_buf.fill()
                 
-                slashImage(canvasDevPt,slashStroke,ctx_buf,canvas)
-                slashImage(canvasDevPt,-1*slashStroke,ctx_buf2,canvas)
+                # 形が一定になってしまうので、ランダムでずらしの方向を変える
+                if(devideChange == 1)
+                    slashImage(canvasDevPt,slashStroke,ctx_buf,canvas)
+                    slashImage(canvasDevPt,-1*slashStroke,ctx_buf2,canvas)
+                else if(devideChange == 2)
+                    slashImage(canvasDevPt,-1*slashStroke,ctx_buf,canvas)
+                    slashImage(canvasDevPt,slashStroke,ctx_buf2,canvas)
 
                 # 下地に統合する
                 ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -268,9 +272,7 @@ $ ->
         $('article').css({'height': h,'width': w})
         # contextが変更されてしまうのでしない
         # $('canvas').attr('width',w).attr('height', h)
-        ctx_buf2.restore()
-        ctx.restore()
-        console.log("restore")
+        
     adjust()
     $(window).on 'resize', () ->
         adjust()
