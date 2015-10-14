@@ -9,22 +9,20 @@ window.requestAnimFrame = do ->
             window.setTimeout callback, 1000 / 60
 
 $ ->
+    #canvas
+    class Canvas
+        constructor: (canvas) ->
+            @canvas          = document.querySelector(canvas)
+            @ctx             = @canvas.getContext('2d')
+            @ctx.strokeStyle = '#f00'
+            @ctx.fillStyle   = 'rgba(0,0,255,0.2)'
+
     # image(base)
-    canvas = document.querySelector("#image-base-container")
-    ctx = canvas.getContext('2d')
-    ctx.strokeStyle = '#f00'
-    ctx.fillStyle = 'rgba(0,255,0,0.2)'
-
-    # image(buffer)
-    canvas_buf = document.querySelector("#image-buf-container")
-    ctx_buf = canvas_buf.getContext('2d')
-    ctx_buf.strokeStyle = '#f00'
-    ctx_buf.fillStyle = 'rgba(255,0,0,0.2)'
-
-    canvas_buf2 = document.querySelector("#image-buf2-container")
-    ctx_buf2 = canvas_buf2.getContext('2d')
-    ctx_buf2.strokeStyle = '#f00'
-    ctx_buf2.fillStyle = 'rgba(0,0,255,0.2)'
+    cvsBackground = new Canvas("#image-background")
+    cvsPattern    = new Canvas("#image-pattern")
+    cvsBase       = new Canvas("#image-base")
+    cvsBuf        = new Canvas("#image-buf")
+    cvsBuf2       = new Canvas("#image-buf2")
 
     #point2d
     class Point2d
@@ -51,62 +49,7 @@ $ ->
                 loadComp++
                 #先読み画像をすべて読み込み終わった時
                 if loadComp is imagesArray.length
-                    console.log("comp!")
-                    ctx.drawImage(imageObjects[0],canvas.width/2-imageObjects[0].width/4,canvas.height/2-imageObjects[0].height/4,imageObjects[0].width/2,imageObjects[0].height/2)
-
-    setLoadImages(imagesArray)
-
-    #二つの直線(ab,cd)の交点を求める
-    # 点a(x1,y1),点b(x2,y2)
-    # 点abを通る直線をy=p*x+qとすると、 
-    # y1=p*x1+q,y2=p*x2+q
-    # y1-y2=p*x1-p*x2
-    # p = (y1-y2)/(x1-x2)
-    # q = y1-p*x1
-    # 点dcを通る直線をy=r*x+sとすると、 
-    # y3=r*x3+s,y4=r*x4+s
-    # y3-y4=r*x3-r*x4
-    # r = (y3-y4)/(x3-x4)
-    # s = y3-r*x3
-
-    # 交点をxx,yyとすると
-    # yy = p*xx + q
-    # yy = r*xx + s
-    # =>
-    # xx = (s - q)/(p - r)
-    # yy = p*xx + q
-
-    # getIntersectionPoint = (a,b,c,d) ->
-    #     # 場合分けが大変なので却下
-    #     # p = (a.y-b.y)/(a.x-b.x)
-    #     # q = a.y-p*a.x
-        
-    #     # r = (c.y-d.y)/(c.x-d.x)
-    #     # s = c.y-r*c.x
-
-    #     # xx = (s - q)/(p - r)
-    #     # yy = p*xx + q
-
-    #     ax = b.x - a.x
-    #     ay = b.y - a.y
-    #     bx = d.x - c.x
-    #     by = d.y - c.y
-    #     cx = c.x - a.x
-    #     cy = c.y - a.y
-        
-    #     cross1 = bx * cy - by * cx;
-    #     cross2 = bx * ay - by * ax;
-        
-    #     if (!cross2) return null
-        
-    #     t = cross1 / cross2;
-
-    #     return new Point2d a.x + ax * t, y: a.y + ay * t
-
-    # #　直線で交差するか
-    # isIntersection = (p1, p2, p3, p4) ->
-    #     p = getIntersectionPoint(p1, p2, p3, p4);
-    #     return p and (p.x - p3.x) * (p.x - p4.x) + (p.y - p3.y) * (p.y - p4.y) < 0 and (p.x - p1.x) * (p.x - p2.x) + (p.y - p1.y) * (p.y - p2.y) < 0
+                    cvsBase.ctx.drawImage(imageObjects[0],cvsBase.canvas.width/2-imageObjects[0].width/4,cvsBase.canvas.height/2-imageObjects[0].height/4,imageObjects[0].width/2,imageObjects[0].height/2)
 
     #canvasを分割する直線を引く
     #参考->http://jsdo.it/akm2/5sUs
@@ -151,15 +94,16 @@ $ ->
     # ずらす
     slashImage = (devidePoint,scale,ctx,image) ->
         # 傾きから角度を求め、ずらしの距離が一定になるようにする
+        # 画像がぼけてしまうので、xyは整数にする
         if((devidePoint[1].x - devidePoint[0].x) is 0)
             slope = null
             angle = 90
+            x     = 0
         else
             slope = (devidePoint[1].y - devidePoint[0].y)/(devidePoint[1].x - devidePoint[0].x)
             angle = Math.atan(slope)
+            x     = Math.floor(scale * Math.cos(angle))
 
-        # 画像がぼけてしまうので、整数にする
-        x = Math.floor(scale * Math.cos(angle))
         y = Math.floor(scale * Math.sin(angle))
 
         ctx.drawImage(image, x, y)
@@ -175,7 +119,7 @@ $ ->
     #mouseEvent
     startPoint = null
     endPoint   = null
-    mouseOut      = false
+    mouseOut   = false
 
     getMousePosOnCanvas = (e) ->
         rect    = e.target.getBoundingClientRect();
@@ -183,20 +127,20 @@ $ ->
         canvasY = e.clientY - rect.top
         return new Point2d canvasX, canvasY
     
-    canvas_buf2.addEventListener 'mousedown', (e) ->
+    cvsBuf2.canvas.addEventListener 'mousedown', (e) ->
         mouseOut = false
         endPoint = null
         startPoint = getMousePosOnCanvas(e)
-    canvas_buf2.addEventListener 'mousemove', (e) ->
+    cvsBuf2.canvas.addEventListener 'mousemove', (e) ->
         # mousedownが起こるまでは、入ってきたところを開始点とする
         if mouseOut
             mouseOut = false
             endPoint = null
             startPoint = getMousePosOnCanvas(e)
-    canvas_buf2.addEventListener 'mouseup', (e) ->
+    cvsBuf2.canvas.addEventListener 'mouseup', (e) ->
         mouseOut = false
         endPoint = getMousePosOnCanvas(e)
-    canvas_buf2.addEventListener 'mouseout', (e) ->
+    cvsBuf2.canvas.addEventListener 'mouseout', (e) ->
         # mouseup時に暴発する時があるようなので、returnする
         if endPoint
             return
@@ -205,74 +149,74 @@ $ ->
         if startPoint
             endPoint = getMousePosOnCanvas(e)
 
+
     loopAnim = () ->
         requestAnimFrame (loopAnim)
         if startPoint and endPoint
             if (Math.abs(startPoint.x - endPoint.x)>72) or (Math.abs(startPoint.y - endPoint.y)>72)
-                canvasDevPt = getCanvasDividePoint(startPoint, endPoint, 720, 720, ctx_buf2)
+                canvasDevPt = getCanvasDividePoint(startPoint, endPoint, 720, 720, cvsBuf2.canvas)
                 
                 slashStroke = getSlashStroke(startPoint, endPoint)
 
                 devideChange = Math.floor(Math.random() * 2) + 1
 
                 # サブパスの状態を初回時で固定する
-                ctx_buf2.restore()
-                ctx_buf2.save()
-                ctx_buf.restore()
-                ctx_buf.save()
+                cvsBuf2.ctx.restore()
+                cvsBuf2.ctx.save()
+                cvsBuf.ctx.restore()
+                cvsBuf.ctx.save()
                 # 赤い線を消す
-                ctx_buf2.clearRect(0, 0, canvas.width, canvas.height)
-
-                # ctx_buf2.drawImage(canvas,0,0)
+                cvsBuf2.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height)
 
                 if canvasDevPt[0].x is 0
                     #上下でカットする
-                    setSubPath(canvasDevPt[0],canvasDevPt[1],topRightPt,topLeftPt,ctx_buf)
-                    setSubPath(canvasDevPt[0],canvasDevPt[1],bottomRightPt,bottomLeftPt,ctx_buf2)
+                    setSubPath(canvasDevPt[0],canvasDevPt[1],topRightPt,topLeftPt,cvsBuf.ctx)
+                    setSubPath(canvasDevPt[0],canvasDevPt[1],bottomRightPt,bottomLeftPt,cvsBuf2.ctx)
                 else
                     #左右でカットする
-                    setSubPath(canvasDevPt[0],canvasDevPt[1],bottomLeftPt,topLeftPt,ctx_buf)
-                    setSubPath(canvasDevPt[0],canvasDevPt[1],bottomRightPt,topRightPt,ctx_buf2)
+                    setSubPath(canvasDevPt[0],canvasDevPt[1],bottomLeftPt,topLeftPt,cvsBuf.ctx)
+                    setSubPath(canvasDevPt[0],canvasDevPt[1],bottomRightPt,topRightPt,cvsBuf2.ctx)
 
-                ctx_buf2.clip()
-                # ctx_buf2.fill()
-                ctx_buf.clip()
-                # ctx_buf.fill()
+                cvsBuf2.ctx.clip()
+                cvsBuf.ctx.clip()
                 
                 # 形が一定になってしまうので、ランダムでずらしの方向を変える
                 if(devideChange == 1)
-                    slashImage(canvasDevPt,slashStroke,ctx_buf,canvas)
-                    slashImage(canvasDevPt,-1*slashStroke,ctx_buf2,canvas)
+                    slashImage(canvasDevPt,slashStroke,cvsBuf.ctx,cvsBase.canvas)
+                    slashImage(canvasDevPt,-1*slashStroke,cvsBuf2.ctx,cvsBase.canvas)
                 else if(devideChange == 2)
-                    slashImage(canvasDevPt,-1*slashStroke,ctx_buf,canvas)
-                    slashImage(canvasDevPt,slashStroke,ctx_buf2,canvas)
+                    slashImage(canvasDevPt,-1*slashStroke,cvsBuf.ctx,cvsBase.canvas)
+                    slashImage(canvasDevPt,slashStroke,cvsBuf2.ctx,cvsBase.canvas)
 
                 # 下地に統合する
-                ctx.clearRect(0, 0, canvas.width, canvas.height)
-                ctx.drawImage(canvas_buf,0,0)
-                ctx.drawImage(canvas_buf2,0,0)
-                ctx_buf2.clearRect(0, 0, canvas.width, canvas.height)
-                ctx_buf.clearRect(0, 0, canvas.width, canvas.height)
+                cvsBase.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height)
+                cvsBase.ctx.drawImage(cvsBuf.canvas,0,0)
+                cvsBase.ctx.drawImage(cvsBuf2.canvas,0,0)
+                cvsBuf2.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height)
+                cvsBuf.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height)
 
                 # 赤い線を引く
-                ctx_buf2.beginPath();
-                ctx_buf2.moveTo(canvasDevPt[0].x, canvasDevPt[0].y)
-                ctx_buf2.lineTo(canvasDevPt[1].x, canvasDevPt[1].y)
-                ctx_buf2.stroke()
+                cvsBuf2.ctx.beginPath();
+                cvsBuf2.ctx.moveTo(canvasDevPt[0].x, canvasDevPt[0].y)
+                cvsBuf2.ctx.lineTo(canvasDevPt[1].x, canvasDevPt[1].y)
+                cvsBuf2.ctx.stroke()
 
             startPoint = null
             endPoint   = null
-
-    loopAnim()
 
     #windowHeightAdjust
     adjust = ->
         w = $(window).width()
         h = $(window).height()
-        $('article').css({'height': h,'width': w})
+        $('article').css({'width': w, 'height': h})
         # contextが変更されてしまうのでしない
         # $('canvas').attr('width',w).attr('height', h)
-        
-    adjust()
-    $(window).on 'resize', () ->
+
+    initialize = ->
+        setLoadImages(imagesArray)
+        loopAnim()
         adjust()
+        $(window).on 'resize', () ->
+            adjust()
+    
+    initialize()

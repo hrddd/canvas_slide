@@ -5,19 +5,23 @@ window.requestAnimFrame = (function() {
 })();
 
 $(function() {
-  var Point2d, adjust, bottomLeftPt, bottomRightPt, canvas, canvas_buf, canvas_buf2, ctx, ctx_buf, ctx_buf2, endPoint, getCanvasDividePoint, getMousePosOnCanvas, getSlashStroke, imageDirectory, imageObjects, imagesArray, loopAnim, mouseOut, setLoadImages, setSubPath, slashImage, startPoint, topLeftPt, topRightPt;
-  canvas = document.querySelector("#image-base-container");
-  ctx = canvas.getContext('2d');
-  ctx.strokeStyle = '#f00';
-  ctx.fillStyle = 'rgba(0,255,0,0.2)';
-  canvas_buf = document.querySelector("#image-buf-container");
-  ctx_buf = canvas_buf.getContext('2d');
-  ctx_buf.strokeStyle = '#f00';
-  ctx_buf.fillStyle = 'rgba(255,0,0,0.2)';
-  canvas_buf2 = document.querySelector("#image-buf2-container");
-  ctx_buf2 = canvas_buf2.getContext('2d');
-  ctx_buf2.strokeStyle = '#f00';
-  ctx_buf2.fillStyle = 'rgba(0,0,255,0.2)';
+  var Canvas, Point2d, adjust, bottomLeftPt, bottomRightPt, cvsBackground, cvsBase, cvsBuf, cvsBuf2, cvsPattern, endPoint, getCanvasDividePoint, getMousePosOnCanvas, getSlashStroke, imageDirectory, imageObjects, imagesArray, initialize, loopAnim, mouseOut, setLoadImages, setSubPath, slashImage, startPoint, topLeftPt, topRightPt;
+  Canvas = (function() {
+    function Canvas(canvas) {
+      this.canvas = document.querySelector(canvas);
+      this.ctx = this.canvas.getContext('2d');
+      this.ctx.strokeStyle = '#f00';
+      this.ctx.fillStyle = 'rgba(0,0,255,0.2)';
+    }
+
+    return Canvas;
+
+  })();
+  cvsBackground = new Canvas("#image-background");
+  cvsPattern = new Canvas("#image-pattern");
+  cvsBase = new Canvas("#image-base");
+  cvsBuf = new Canvas("#image-buf");
+  cvsBuf2 = new Canvas("#image-buf2");
   Point2d = (function() {
     function Point2d(x3, y3) {
       this.x = x3;
@@ -45,14 +49,12 @@ $(function() {
       results.push(imageObjects[index].onload = function() {
         loadComp++;
         if (loadComp === imagesArray.length) {
-          console.log("comp!");
-          return ctx.drawImage(imageObjects[0], canvas.width / 2 - imageObjects[0].width / 4, canvas.height / 2 - imageObjects[0].height / 4, imageObjects[0].width / 2, imageObjects[0].height / 2);
+          return cvsBase.ctx.drawImage(imageObjects[0], cvsBase.canvas.width / 2 - imageObjects[0].width / 4, cvsBase.canvas.height / 2 - imageObjects[0].height / 4, imageObjects[0].width / 2, imageObjects[0].height / 2);
         }
       });
     }
     return results;
   };
-  setLoadImages(imagesArray);
   getCanvasDividePoint = function(p1, p2, cw, ch) {
     var a, b, c, devidePoint, x1, x2, y1, y2;
     a = p2.y - p1.y;
@@ -94,11 +96,12 @@ $(function() {
     if ((devidePoint[1].x - devidePoint[0].x) === 0) {
       slope = null;
       angle = 90;
+      x = 0;
     } else {
       slope = (devidePoint[1].y - devidePoint[0].y) / (devidePoint[1].x - devidePoint[0].x);
       angle = Math.atan(slope);
+      x = Math.floor(scale * Math.cos(angle));
     }
-    x = Math.floor(scale * Math.cos(angle));
     y = Math.floor(scale * Math.sin(angle));
     return ctx.drawImage(image, x, y);
   };
@@ -118,23 +121,23 @@ $(function() {
     canvasY = e.clientY - rect.top;
     return new Point2d(canvasX, canvasY);
   };
-  canvas_buf2.addEventListener('mousedown', function(e) {
+  cvsBuf2.canvas.addEventListener('mousedown', function(e) {
     mouseOut = false;
     endPoint = null;
     return startPoint = getMousePosOnCanvas(e);
   });
-  canvas_buf2.addEventListener('mousemove', function(e) {
+  cvsBuf2.canvas.addEventListener('mousemove', function(e) {
     if (mouseOut) {
       mouseOut = false;
       endPoint = null;
       return startPoint = getMousePosOnCanvas(e);
     }
   });
-  canvas_buf2.addEventListener('mouseup', function(e) {
+  cvsBuf2.canvas.addEventListener('mouseup', function(e) {
     mouseOut = false;
     return endPoint = getMousePosOnCanvas(e);
   });
-  canvas_buf2.addEventListener('mouseout', function(e) {
+  cvsBuf2.canvas.addEventListener('mouseout', function(e) {
     if (endPoint) {
       return;
     }
@@ -148,56 +151,60 @@ $(function() {
     requestAnimFrame(loopAnim);
     if (startPoint && endPoint) {
       if ((Math.abs(startPoint.x - endPoint.x) > 72) || (Math.abs(startPoint.y - endPoint.y) > 72)) {
-        canvasDevPt = getCanvasDividePoint(startPoint, endPoint, 720, 720, ctx_buf2);
+        canvasDevPt = getCanvasDividePoint(startPoint, endPoint, 720, 720, cvsBuf2.canvas);
         slashStroke = getSlashStroke(startPoint, endPoint);
         devideChange = Math.floor(Math.random() * 2) + 1;
-        ctx_buf2.restore();
-        ctx_buf2.save();
-        ctx_buf.restore();
-        ctx_buf.save();
-        ctx_buf2.clearRect(0, 0, canvas.width, canvas.height);
+        cvsBuf2.ctx.restore();
+        cvsBuf2.ctx.save();
+        cvsBuf.ctx.restore();
+        cvsBuf.ctx.save();
+        cvsBuf2.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height);
         if (canvasDevPt[0].x === 0) {
-          setSubPath(canvasDevPt[0], canvasDevPt[1], topRightPt, topLeftPt, ctx_buf);
-          setSubPath(canvasDevPt[0], canvasDevPt[1], bottomRightPt, bottomLeftPt, ctx_buf2);
+          setSubPath(canvasDevPt[0], canvasDevPt[1], topRightPt, topLeftPt, cvsBuf.ctx);
+          setSubPath(canvasDevPt[0], canvasDevPt[1], bottomRightPt, bottomLeftPt, cvsBuf2.ctx);
         } else {
-          setSubPath(canvasDevPt[0], canvasDevPt[1], bottomLeftPt, topLeftPt, ctx_buf);
-          setSubPath(canvasDevPt[0], canvasDevPt[1], bottomRightPt, topRightPt, ctx_buf2);
+          setSubPath(canvasDevPt[0], canvasDevPt[1], bottomLeftPt, topLeftPt, cvsBuf.ctx);
+          setSubPath(canvasDevPt[0], canvasDevPt[1], bottomRightPt, topRightPt, cvsBuf2.ctx);
         }
-        ctx_buf2.clip();
-        ctx_buf.clip();
+        cvsBuf2.ctx.clip();
+        cvsBuf.ctx.clip();
         if (devideChange === 1) {
-          slashImage(canvasDevPt, slashStroke, ctx_buf, canvas);
-          slashImage(canvasDevPt, -1 * slashStroke, ctx_buf2, canvas);
+          slashImage(canvasDevPt, slashStroke, cvsBuf.ctx, cvsBase.canvas);
+          slashImage(canvasDevPt, -1 * slashStroke, cvsBuf2.ctx, cvsBase.canvas);
         } else if (devideChange === 2) {
-          slashImage(canvasDevPt, -1 * slashStroke, ctx_buf, canvas);
-          slashImage(canvasDevPt, slashStroke, ctx_buf2, canvas);
+          slashImage(canvasDevPt, -1 * slashStroke, cvsBuf.ctx, cvsBase.canvas);
+          slashImage(canvasDevPt, slashStroke, cvsBuf2.ctx, cvsBase.canvas);
         }
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(canvas_buf, 0, 0);
-        ctx.drawImage(canvas_buf2, 0, 0);
-        ctx_buf2.clearRect(0, 0, canvas.width, canvas.height);
-        ctx_buf.clearRect(0, 0, canvas.width, canvas.height);
-        ctx_buf2.beginPath();
-        ctx_buf2.moveTo(canvasDevPt[0].x, canvasDevPt[0].y);
-        ctx_buf2.lineTo(canvasDevPt[1].x, canvasDevPt[1].y);
-        ctx_buf2.stroke();
+        cvsBase.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height);
+        cvsBase.ctx.drawImage(cvsBuf.canvas, 0, 0);
+        cvsBase.ctx.drawImage(cvsBuf2.canvas, 0, 0);
+        cvsBuf2.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height);
+        cvsBuf.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height);
+        cvsBuf2.ctx.beginPath();
+        cvsBuf2.ctx.moveTo(canvasDevPt[0].x, canvasDevPt[0].y);
+        cvsBuf2.ctx.lineTo(canvasDevPt[1].x, canvasDevPt[1].y);
+        cvsBuf2.ctx.stroke();
       }
       startPoint = null;
       return endPoint = null;
     }
   };
-  loopAnim();
   adjust = function() {
     var h, w;
     w = $(window).width();
     h = $(window).height();
     return $('article').css({
-      'height': h,
-      'width': w
+      'width': w,
+      'height': h
     });
   };
-  adjust();
-  return $(window).on('resize', function() {
-    return adjust();
-  });
+  initialize = function() {
+    setLoadImages(imagesArray);
+    loopAnim();
+    adjust();
+    return $(window).on('resize', function() {
+      return adjust();
+    });
+  };
+  return initialize();
 });

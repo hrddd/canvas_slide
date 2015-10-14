@@ -92,6 +92,6 @@ canvas {
   width: 100%;
   height: 100%;
 }
-canvas#image-base-container, canvas#image-buf-container, canvas#image-buf2-container {
+canvas#image-base, canvas#image-buf, canvas#image-buf2, canvas#image-background, canvas#image-pattern {
   position: absolute;
 }
