@@ -170,15 +170,6 @@ $(function() {
     mouseOut = false;
     return endPoint = getMousePosOnCanvas(e);
   });
-  cvsBuf2.canvas.addEventListener('mouseout', function(e) {
-    if (endPoint) {
-      return;
-    }
-    mouseOut = true;
-    if (startPoint) {
-      return endPoint = getMousePosOnCanvas(e);
-    }
-  });
   loopAnim = function() {
     var canvasDevPt, devideChange;
     requestAnimFrame(loopAnim);

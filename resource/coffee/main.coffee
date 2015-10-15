@@ -200,14 +200,15 @@ $ ->
     cvsBuf2.canvas.addEventListener 'mouseup', (e) ->
         mouseOut = false
         endPoint = getMousePosOnCanvas(e)
-    cvsBuf2.canvas.addEventListener 'mouseout', (e) ->
-        # mouseup時に暴発する時があるようなので、returnする
-        if endPoint
-            return
-        mouseOut = true
-        # mousedownして、canvas内でmouseupしなかった場合、外れた地点を終点とする
-        if startPoint
-            endPoint = getMousePosOnCanvas(e)
+    # PCブラウザタブ切り替え等で暴発するので外す
+    # cvsBuf2.canvas.addEventListener 'mouseout', (e) ->
+    #     # mouseup時に暴発する時があるようなので、returnする
+    #     if endPoint
+    #         return
+    #     mouseOut = true
+    #     # mousedownして、canvas内でmouseupしなかった場合、外れた地点を終点とする
+    #     if startPoint
+    #         endPoint = getMousePosOnCanvas(e)
 
 
     loopAnim = () ->
