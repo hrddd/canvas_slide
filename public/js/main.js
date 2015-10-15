@@ -5,23 +5,70 @@ window.requestAnimFrame = (function() {
 })();
 
 $(function() {
-  var Canvas, Point2d, adjust, bottomLeftPt, bottomRightPt, cvsBackground, cvsBase, cvsBuf, cvsBuf2, cvsPattern, endPoint, getCanvasDividePoint, getMousePosOnCanvas, getSlashStroke, imageDirectory, imageObjects, imagesArray, initialize, loopAnim, mouseOut, setLoadImages, setSubPath, slashImage, startPoint, topLeftPt, topRightPt;
+  var Canvas, Point2d, adjust, bottomLeftPt, bottomRightPt, cvsBackground, cvsBase, cvsBaseHeight, cvsBaseWidth, cvsBuf, cvsBuf2, endPoint, getCanvasDividePoint, getMousePosOnCanvas, imageDirectory, imageObjects, imagesArray, initialize, loopAnim, mouseOut, patternHeight, patternWidth, scaledHeight, scaledWidth, setBackground, setCirclePattern, setLoadImages, setScaledGrayscale, setSubPath, slashImage, startPoint, strokeLimitX, strokeLimitY, topLeftPt, topRightPt;
   Canvas = (function() {
     function Canvas(canvas) {
-      this.canvas = document.querySelector(canvas);
+      if (document.getElementById(canvas)) {
+        this.canvas = document.getElementById(canvas);
+      } else {
+        this.canvas = document.createElement('canvas');
+        this.canvas.setAttribute('id', canvas);
+      }
       this.ctx = this.canvas.getContext('2d');
       this.ctx.strokeStyle = '#f00';
-      this.ctx.fillStyle = 'rgba(0,0,255,0.2)';
+      this.ctx.lineWidth = 2;
+      this.ctx.fillStyle = 'rgba(0,18,36,.2)';
     }
 
     return Canvas;
 
   })();
-  cvsBackground = new Canvas("#image-background");
-  cvsPattern = new Canvas("#image-pattern");
-  cvsBase = new Canvas("#image-base");
-  cvsBuf = new Canvas("#image-buf");
-  cvsBuf2 = new Canvas("#image-buf2");
+  cvsBackground = new Canvas("image-background");
+  cvsBase = new Canvas("image-base");
+  cvsBuf = new Canvas("image-buf");
+  cvsBuf2 = new Canvas("image-buf2");
+  cvsBaseWidth = cvsBase.canvas.width;
+  cvsBaseHeight = cvsBase.canvas.height;
+  strokeLimitX = cvsBaseWidth / 30;
+  strokeLimitY = cvsBaseHeight / 30;
+  setCirclePattern = function(w, h, r, ctx) {
+    var cvsPattern, pattern;
+    cvsPattern = new Canvas("image-pattern");
+    cvsPattern.canvas.width = w;
+    cvsPattern.canvas.height = h;
+    cvsPattern.ctx.beginPath();
+    cvsPattern.ctx.arc(w / 2, h / 2, r, 0, 360 * Math.PI / 180, true);
+    cvsPattern.ctx.fill();
+    pattern = ctx.createPattern(cvsPattern.canvas, 'repeat');
+    ctx.fillStyle = pattern;
+    return ctx.fillRect(0, 0, cvsBaseWidth, cvsBaseHeight);
+  };
+  patternWidth = Math.floor(cvsBaseWidth / 144);
+  patternHeight = Math.floor(cvsBaseHeight / 144);
+  setScaledGrayscale = function(w, h, imgCanvas, canvas) {
+    var cvsScale, grayscale, i, imgd, j, pix, ref;
+    cvsScale = new Canvas("image-scale");
+    cvsScale.canvas.width = w;
+    cvsScale.canvas.height = h;
+    cvsScale.ctx.fillStyle = 'rgba(0,18,36,.2)';
+    imgd = imgCanvas.ctx.getImageData(cvsBaseWidth / 2 - w / 2, cvsBaseHeight / 2 - h / 2, w, h);
+    pix = imgd.data;
+    for (i = j = 0, ref = pix.length; j <= ref; i = j += 4) {
+      grayscale = pix[i] * .3 + pix[i + 1] * .59 + pix[i + 2] * .11;
+      pix[i] = grayscale;
+      pix[i + 1] = grayscale;
+      pix[i + 2] = grayscale;
+    }
+    cvsScale.ctx.putImageData(imgd, 0, 0);
+    cvsScale.ctx.fillRect(0, 0, w, h);
+    return canvas.ctx.drawImage(cvsScale.canvas, 0, 0, cvsBaseWidth, cvsBaseHeight);
+  };
+  scaledWidth = Math.floor(cvsBaseWidth / 2);
+  scaledHeight = Math.floor(cvsBaseHeight / 2);
+  setBackground = function() {
+    setScaledGrayscale(scaledWidth, scaledHeight, cvsBase, cvsBackground);
+    return setCirclePattern(patternWidth, patternHeight, .5, cvsBackground.ctx);
+  };
   Point2d = (function() {
     function Point2d(x3, y3) {
       this.x = x3;
@@ -32,24 +79,24 @@ $(function() {
 
   })();
   topLeftPt = new Point2d(0, 0);
-  topRightPt = new Point2d(720, 0);
-  bottomLeftPt = new Point2d(0, 720);
-  bottomRightPt = new Point2d(720, 720);
+  topRightPt = new Point2d(cvsBaseWidth, 0);
+  bottomLeftPt = new Point2d(0, cvsBaseHeight);
+  bottomRightPt = new Point2d(cvsBaseWidth, cvsBaseHeight);
   imagesArray = ["1.png"];
   imageDirectory = "../img/";
   imageObjects = [];
   setLoadImages = function(imagesArray) {
-    var i, imageName, index, len, loadComp, results;
+    var imageName, index, j, len, loadComp, results;
     loadComp = 0;
     results = [];
-    for (index = i = 0, len = imagesArray.length; i < len; index = ++i) {
+    for (index = j = 0, len = imagesArray.length; j < len; index = ++j) {
       imageName = imagesArray[index];
       imageObjects.push(new Image());
       imageObjects[index].src = imageDirectory + imageName;
       results.push(imageObjects[index].onload = function() {
         loadComp++;
         if (loadComp === imagesArray.length) {
-          return cvsBase.ctx.drawImage(imageObjects[0], cvsBase.canvas.width / 2 - imageObjects[0].width / 4, cvsBase.canvas.height / 2 - imageObjects[0].height / 4, imageObjects[0].width / 2, imageObjects[0].height / 2);
+          return cvsBase.ctx.drawImage(imageObjects[0], cvsBaseWidth / 2 - imageObjects[0].width / 4, cvsBaseHeight / 2 - imageObjects[0].height / 4, imageObjects[0].width / 2, imageObjects[0].height / 2);
         }
       });
     }
@@ -91,25 +138,11 @@ $(function() {
     ctx.lineTo(p4.x, p4.y);
     return ctx.closePath();
   };
-  slashImage = function(devidePoint, scale, ctx, image) {
-    var angle, slope, x, y;
-    if ((devidePoint[1].x - devidePoint[0].x) === 0) {
-      slope = null;
-      angle = 90;
-      x = 0;
-    } else {
-      slope = (devidePoint[1].y - devidePoint[0].y) / (devidePoint[1].x - devidePoint[0].x);
-      angle = Math.atan(slope);
-      x = Math.floor(scale * Math.cos(angle));
-    }
-    y = Math.floor(scale * Math.sin(angle));
+  slashImage = function(startPoint, endPoint, ctx, image, vector) {
+    var x, y;
+    x = Math.floor((endPoint.x - startPoint.x) * vector);
+    y = Math.floor((endPoint.y - startPoint.y) * vector);
     return ctx.drawImage(image, x, y);
-  };
-  getSlashStroke = function(startPoint, endPoint) {
-    var distanceX, distanceY;
-    distanceX = endPoint.x - startPoint.x;
-    distanceY = endPoint.y - startPoint.y;
-    return Math.sqrt(distanceX * distanceX + distanceY * distanceY) / 10;
   };
   startPoint = null;
   endPoint = null;
@@ -147,18 +180,17 @@ $(function() {
     }
   });
   loopAnim = function() {
-    var canvasDevPt, devideChange, slashStroke;
+    var canvasDevPt, devideChange;
     requestAnimFrame(loopAnim);
     if (startPoint && endPoint) {
-      if ((Math.abs(startPoint.x - endPoint.x) > 72) || (Math.abs(startPoint.y - endPoint.y) > 72)) {
-        canvasDevPt = getCanvasDividePoint(startPoint, endPoint, 720, 720, cvsBuf2.canvas);
-        slashStroke = getSlashStroke(startPoint, endPoint);
+      if ((Math.abs(startPoint.x - endPoint.x) > strokeLimitX) || (Math.abs(startPoint.y - endPoint.y) > strokeLimitY)) {
+        canvasDevPt = getCanvasDividePoint(startPoint, endPoint, cvsBaseWidth, cvsBaseHeight, cvsBuf2.canvas);
         devideChange = Math.floor(Math.random() * 2) + 1;
         cvsBuf2.ctx.restore();
         cvsBuf2.ctx.save();
         cvsBuf.ctx.restore();
         cvsBuf.ctx.save();
-        cvsBuf2.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height);
+        cvsBuf2.ctx.clearRect(0, 0, cvsBaseWidth, cvsBaseHeight);
         if (canvasDevPt[0].x === 0) {
           setSubPath(canvasDevPt[0], canvasDevPt[1], topRightPt, topLeftPt, cvsBuf.ctx);
           setSubPath(canvasDevPt[0], canvasDevPt[1], bottomRightPt, bottomLeftPt, cvsBuf2.ctx);
@@ -168,18 +200,14 @@ $(function() {
         }
         cvsBuf2.ctx.clip();
         cvsBuf.ctx.clip();
-        if (devideChange === 1) {
-          slashImage(canvasDevPt, slashStroke, cvsBuf.ctx, cvsBase.canvas);
-          slashImage(canvasDevPt, -1 * slashStroke, cvsBuf2.ctx, cvsBase.canvas);
-        } else if (devideChange === 2) {
-          slashImage(canvasDevPt, -1 * slashStroke, cvsBuf.ctx, cvsBase.canvas);
-          slashImage(canvasDevPt, slashStroke, cvsBuf2.ctx, cvsBase.canvas);
-        }
-        cvsBase.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height);
+        slashImage(startPoint, endPoint, cvsBuf.ctx, cvsBase.canvas, .2);
+        slashImage(startPoint, endPoint, cvsBuf2.ctx, cvsBase.canvas, -.2);
+        cvsBase.ctx.clearRect(0, 0, cvsBaseWidth, cvsBaseHeight);
         cvsBase.ctx.drawImage(cvsBuf.canvas, 0, 0);
         cvsBase.ctx.drawImage(cvsBuf2.canvas, 0, 0);
-        cvsBuf2.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height);
-        cvsBuf.ctx.clearRect(0, 0, cvsBase.canvas.width, cvsBase.canvas.height);
+        cvsBuf2.ctx.clearRect(0, 0, cvsBaseWidth, cvsBaseHeight);
+        cvsBuf.ctx.clearRect(0, 0, cvsBaseWidth, cvsBaseHeight);
+        setBackground();
         cvsBuf2.ctx.beginPath();
         cvsBuf2.ctx.moveTo(canvasDevPt[0].x, canvasDevPt[0].y);
         cvsBuf2.ctx.lineTo(canvasDevPt[1].x, canvasDevPt[1].y);
@@ -201,6 +229,7 @@ $(function() {
   initialize = function() {
     setLoadImages(imagesArray);
     loopAnim();
+    setBackground();
     adjust();
     return $(window).on('resize', function() {
       return adjust();
